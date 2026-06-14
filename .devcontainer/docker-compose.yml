@@ -1,0 +1,36 @@
+services:
+  dev:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu-22.04
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    environment:
+      - DATABASE_URL=postgres://quire:quire@db:5432/quire
+      - JWT_SECRET=quire
+      - GO_ENV=development
+      - NODE_OPTIONS=--max-old-space-size=4096
+    depends_on:
+      - db
+    networks:
+      - quire-net
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: quire
+      POSTGRES_PASSWORD: quire
+      POSTGRES_DB: quire
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - quire-net
+
+volumes:
+  pgdata:
+
+networks:
+  quire-net:
