@@ -9,7 +9,6 @@
 	import Underline from "@tiptap/extension-underline";
 	import TextAlign from "@tiptap/extension-text-align";
 	import Highlight from "@tiptap/extension-highlight";
-	// Fix: Use named imports (no default export)
 	import { Table } from "@tiptap/extension-table";
 	import { TableRow } from "@tiptap/extension-table-row";
 	import { TableCell } from "@tiptap/extension-table-cell";
@@ -41,7 +40,6 @@
 		loadWorkspaceData,
 	} from "$lib/stores/workspace.svelte";
 
-	// Configure marked for better markdown support (remove invalid options)
 	marked.setOptions({
 		breaks: true,
 		gfm: true,
@@ -85,6 +83,23 @@
 	let isOrderedList = $state(false);
 	let isBlockquote = $state(false);
 	let isCodeBlock = $state(false);
+
+	// Close all dropdowns
+	function closeAllDropdowns() {
+		activeMenus.format = false;
+		activeMenus.align = false;
+		activeMenus.list = false;
+		activeMenus.table = false;
+	}
+
+	// Toggle dropdown with click
+	function toggleDropdown(dropdown: keyof typeof activeMenus) {
+		// Close all other dropdowns first
+		if (!activeMenus[dropdown]) {
+			closeAllDropdowns();
+		}
+		activeMenus[dropdown] = !activeMenus[dropdown];
+	}
 
 	// Destroy editor instance
 	function destroyEditor() {
@@ -336,6 +351,7 @@
 			.focus()
 			.insertTable({ rows: 3, cols: 3, withHeaderRow: true })
 			.run();
+		closeAllDropdowns();
 	}
 
 	// Toolbar actions with focus feedback
@@ -356,10 +372,21 @@
 		};
 	}
 
+	// Handle click outside to close dropdowns
+	function handleClickOutside(e: MouseEvent) {
+		const target = e.target as HTMLElement;
+		if (!target.closest(".dropdown-container")) {
+			closeAllDropdowns();
+		}
+	}
+
 	onDestroy(() => {
 		destroyEditor();
+		document.removeEventListener("click", handleClickOutside);
 	});
 </script>
+
+<svelte:window onclick={handleClickOutside} />
 
 {#if loading}
 	<div class="flex items-center justify-center h-full">
@@ -410,16 +437,13 @@
 
 			<div class="toolbar-divider"></div>
 
-			<div
-				class="relative"
-				role="menu"
-				tabindex="-1"
-				onmouseleave={() => (activeMenus.format = false)}
-			>
+			<!-- Format Dropdown -->
+			<div class="relative dropdown-container">
 				<button
-					onmousedown={(e) => {
+					onclick={(e) => {
 						e.preventDefault();
-						activeMenus.format = !activeMenus.format;
+						e.stopPropagation();
+						toggleDropdown("format");
 					}}
 					class="toolbar-btn {activeMenus.format ? 'active' : ''}"
 					title="Format"
@@ -429,27 +453,30 @@
 				{#if activeMenus.format}
 					<div class="toolbar-dropdown" role="menu">
 						<button
-							onmousedown={toolbarBtn(() =>
-								editor?.chain().focus().toggleHeading({ level: 1 }).run(),
-							)}
+							onclick={() => {
+								editor?.chain().focus().toggleHeading({ level: 1 }).run();
+								closeAllDropdowns();
+							}}
 							class="toolbar-dropdown-item {isHeading1 ? 'active' : ''}"
 							role="menuitem"
 						>
 							<Heading1 size={14} /> Heading 1
 						</button>
 						<button
-							onmousedown={toolbarBtn(() =>
-								editor?.chain().focus().toggleHeading({ level: 2 }).run(),
-							)}
+							onclick={() => {
+								editor?.chain().focus().toggleHeading({ level: 2 }).run();
+								closeAllDropdowns();
+							}}
 							class="toolbar-dropdown-item {isHeading2 ? 'active' : ''}"
 							role="menuitem"
 						>
 							<Heading2 size={14} /> Heading 2
 						</button>
 						<button
-							onmousedown={toolbarBtn(() =>
-								editor?.chain().focus().toggleHeading({ level: 3 }).run(),
-							)}
+							onclick={() => {
+								editor?.chain().focus().toggleHeading({ level: 3 }).run();
+								closeAllDropdowns();
+							}}
 							class="toolbar-dropdown-item {isHeading3 ? 'active' : ''}"
 							role="menuitem"
 						>
@@ -457,9 +484,10 @@
 						</button>
 						<div class="dropdown-divider"></div>
 						<button
-							onmousedown={toolbarBtn(() =>
-								editor?.chain().focus().setParagraph().run(),
-							)}
+							onclick={() => {
+								editor?.chain().focus().setParagraph().run();
+								closeAllDropdowns();
+							}}
 							class="toolbar-dropdown-item {isParagraph ? 'active' : ''}"
 							role="menuitem"
 						>
@@ -471,6 +499,7 @@
 
 			<div class="toolbar-divider"></div>
 
+			<!-- Text Formatting Buttons -->
 			<button
 				onmousedown={toolbarBtn(() =>
 					editor?.chain().focus().toggleBold().run(),
@@ -528,16 +557,13 @@
 
 			<div class="toolbar-divider"></div>
 
-			<div
-				class="relative"
-				role="menu"
-				tabindex="-1"
-				onmouseleave={() => (activeMenus.align = false)}
-			>
+			<!-- Alignment Dropdown -->
+			<div class="relative dropdown-container">
 				<button
-					onmousedown={(e) => {
+					onclick={(e) => {
 						e.preventDefault();
-						activeMenus.align = !activeMenus.align;
+						e.stopPropagation();
+						toggleDropdown("align");
 					}}
 					class="toolbar-btn {activeMenus.align ? 'active' : ''}"
 					title="Alignment"
@@ -547,27 +573,30 @@
 				{#if activeMenus.align}
 					<div class="toolbar-dropdown" role="menu">
 						<button
-							onmousedown={toolbarBtn(() =>
-								editor?.chain().focus().setTextAlign("left").run(),
-							)}
+							onclick={() => {
+								editor?.chain().focus().setTextAlign("left").run();
+								closeAllDropdowns();
+							}}
 							class="toolbar-dropdown-item {isAlignLeft ? 'active' : ''}"
 							role="menuitem"
 						>
 							<AlignLeft size={14} /> Align Left
 						</button>
 						<button
-							onmousedown={toolbarBtn(() =>
-								editor?.chain().focus().setTextAlign("center").run(),
-							)}
+							onclick={() => {
+								editor?.chain().focus().setTextAlign("center").run();
+								closeAllDropdowns();
+							}}
 							class="toolbar-dropdown-item {isAlignCenter ? 'active' : ''}"
 							role="menuitem"
 						>
 							<AlignCenter size={14} /> Align Center
 						</button>
 						<button
-							onmousedown={toolbarBtn(() =>
-								editor?.chain().focus().setTextAlign("right").run(),
-							)}
+							onclick={() => {
+								editor?.chain().focus().setTextAlign("right").run();
+								closeAllDropdowns();
+							}}
 							class="toolbar-dropdown-item {isAlignRight ? 'active' : ''}"
 							role="menuitem"
 						>
@@ -579,16 +608,13 @@
 
 			<div class="toolbar-divider"></div>
 
-			<div
-				class="relative"
-				role="menu"
-				tabindex="-1"
-				onmouseleave={() => (activeMenus.list = false)}
-			>
+			<!-- Lists Dropdown -->
+			<div class="relative dropdown-container">
 				<button
-					onmousedown={(e) => {
+					onclick={(e) => {
 						e.preventDefault();
-						activeMenus.list = !activeMenus.list;
+						e.stopPropagation();
+						toggleDropdown("list");
 					}}
 					class="toolbar-btn {activeMenus.list ? 'active' : ''}"
 					title="Lists"
@@ -598,18 +624,20 @@
 				{#if activeMenus.list}
 					<div class="toolbar-dropdown" role="menu">
 						<button
-							onmousedown={toolbarBtn(() =>
-								editor?.chain().focus().toggleBulletList().run(),
-							)}
+							onclick={() => {
+								editor?.chain().focus().toggleBulletList().run();
+								closeAllDropdowns();
+							}}
 							class="toolbar-dropdown-item {isBulletList ? 'active' : ''}"
 							role="menuitem"
 						>
 							<List size={14} /> Bullet List
 						</button>
 						<button
-							onmousedown={toolbarBtn(() =>
-								editor?.chain().focus().toggleOrderedList().run(),
-							)}
+							onclick={() => {
+								editor?.chain().focus().toggleOrderedList().run();
+								closeAllDropdowns();
+							}}
 							class="toolbar-dropdown-item {isOrderedList ? 'active' : ''}"
 							role="menuitem"
 						>
@@ -617,18 +645,20 @@
 						</button>
 						<div class="dropdown-divider"></div>
 						<button
-							onmousedown={toolbarBtn(() =>
-								editor?.chain().focus().toggleBlockquote().run(),
-							)}
+							onclick={() => {
+								editor?.chain().focus().toggleBlockquote().run();
+								closeAllDropdowns();
+							}}
 							class="toolbar-dropdown-item {isBlockquote ? 'active' : ''}"
 							role="menuitem"
 						>
 							<Quote size={14} /> Quote
 						</button>
 						<button
-							onmousedown={toolbarBtn(() =>
-								editor?.chain().focus().toggleCodeBlock().run(),
-							)}
+							onclick={() => {
+								editor?.chain().focus().toggleCodeBlock().run();
+								closeAllDropdowns();
+							}}
 							class="toolbar-dropdown-item {isCodeBlock ? 'active' : ''}"
 							role="menuitem"
 						>
@@ -640,16 +670,13 @@
 
 			<div class="toolbar-divider"></div>
 
-			<div
-				class="relative"
-				role="menu"
-				tabindex="-1"
-				onmouseleave={() => (activeMenus.table = false)}
-			>
+			<!-- Table Dropdown -->
+			<div class="relative dropdown-container">
 				<button
-					onmousedown={(e) => {
+					onclick={(e) => {
 						e.preventDefault();
-						activeMenus.table = !activeMenus.table;
+						e.stopPropagation();
+						toggleDropdown("table");
 					}}
 					class="toolbar-btn {activeMenus.table ? 'active' : ''}"
 					title="Insert Table"
@@ -659,7 +686,10 @@
 				{#if activeMenus.table}
 					<div class="toolbar-dropdown" role="menu">
 						<button
-							onmousedown={toolbarBtn(() => insertTable())}
+							onclick={() => {
+								insertTable();
+								closeAllDropdowns();
+							}}
 							class="toolbar-dropdown-item"
 							role="menuitem"
 						>
