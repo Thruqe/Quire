@@ -1,2 +1,3 @@
 # Quire
-Your workspace, no noise.
+
+**_Your workspace, no noise._**
